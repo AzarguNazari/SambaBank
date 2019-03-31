@@ -1,18 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package DOA;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.chart.PieChart;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 
 /**
@@ -22,11 +18,18 @@ import javax.swing.JOptionPane;
 public class DatabaseHandler {
 
     private static DatabaseHandler handler = null;
+    
+    private static final String DB_URL = "jdbc:derby://localhost:1527/LearningDisabilityDataBase",
+            DRIVER = "org.apache.derby.jdbc.ClientDriver",
+            messageBundle="DatabaseAndLocalization/MessagesBundle";
+
     private static String currentUsername;
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/bank";
-    private static final String DRIVER = "com.mysql.jdbc.Driver";
     private static Connection conn = null;
     private static Statement stmt = null;
+
+    private final Locale english, farsi;
+    private Locale currentLocale;
+    ResourceBundle messages;
 
     static {
         createConnection();
@@ -34,6 +37,12 @@ public class DatabaseHandler {
     }
 
     private DatabaseHandler() {
+        this.farsi = new Locale("fa","IR");
+        this.english = Locale.US;
+        Locale.setDefault(english);
+
+        this.currentLocale = Locale.getDefault();
+        this.messages = ResourceBundle.getBundle(messageBundle, currentLocale);
     }
 
     public static DatabaseHandler getInstance() {
@@ -58,77 +67,6 @@ public class DatabaseHandler {
         System.out.println("Works!");
     }
 
-    //Executes query
-    public ResultSet execQuery(String query) {
-        ResultSet result;
-        try {
-            stmt = conn.createStatement();
-            result = stmt.executeQuery(query);
-        } catch (SQLException ex) {
-            System.out.println("Exception at execQuery:dataHandler" + ex.getLocalizedMessage());
-            return null;
-        } finally {
-        }
-        return result;
-    }
-
-    //Unknown
-    public boolean execAction(String qu) {
-        try {
-            stmt = conn.createStatement();
-            stmt.execute(qu);
-            return true;
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error:" + ex.getMessage(), "Error Occured", JOptionPane.ERROR_MESSAGE);
-            System.out.println("Exception at execQuery:dataHandler" + ex.getLocalizedMessage());
-            return false;
-        } finally {
-        }
-    }
-
-    //Make Generic
-    public ObservableList<PieChart.Data> getBookGraphStatistics() {
-        ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
-        try {
-            String qu1 = "SELECT COUNT(*) FROM BOOK";
-            String qu2 = "SELECT COUNT(*) FROM ISSUE";
-            ResultSet rs = execQuery(qu1);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Total Books (" + count + ")", count));
-            }
-            rs = execQuery(qu2);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Issued Books (" + count + ")", count));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return data;
-    }
-
-    //Make Generic
-    public ObservableList<PieChart.Data> getMemberGraphStatistics() {
-        ObservableList<PieChart.Data> data = FXCollections.observableArrayList();
-        try {
-            String qu1 = "SELECT COUNT(*) FROM MEMBER";
-            String qu2 = "SELECT COUNT(DISTINCT memberID) FROM ISSUE";
-            ResultSet rs = execQuery(qu1);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Total Members (" + count + ")", count));
-            }
-            rs = execQuery(qu2);
-            if (rs.next()) {
-                int count = rs.getInt(1);
-                data.add(new PieChart.Data("Active (" + count + ")", count));
-            }
-        } catch (SQLException e) {
-        }
-        return data;
-    }
-
     public Connection getConnection() {
         return conn;
     }
@@ -139,6 +77,46 @@ public class DatabaseHandler {
 
     public static void setCurrentUsername(String currentUsername) {
         DatabaseHandler.currentUsername = currentUsername;
+    }
+
+    public static void handleSQLExceptions(SQLException e) {
+        while (e != null) {
+
+            //Vendor-dependent state codes, error codes and messages.
+            System.out.println("SQLState:   " + e.getSQLState());
+            System.out.println("Error Code:" + e.getErrorCode());
+            System.out.println("Message:    " + e.getMessage());
+
+            Throwable t = e.getCause();
+
+            while (t != null) {
+                System.out.println("Cause:" + t);
+
+                //Iterate to the next cause.
+                t = t.getCause();
+            }
+
+            //Iterate to the next SQL exception
+            e = e.getNextException();
+        }
+    }
+
+    public void setFarsi() {
+        this.currentLocale = farsi;
+        this.messages = ResourceBundle.getBundle(messageBundle, currentLocale);
+    }
+
+    public void setEnglish() {
+        this.currentLocale = english;
+        this.messages = ResourceBundle.getBundle(messageBundle, currentLocale);
+    }
+
+    public Locale getCurrentLocale() {
+        return currentLocale;
+    }
+
+    public ResourceBundle getMessages() {
+        return messages;
     }
 
     public static void main(String[] args) throws Exception {

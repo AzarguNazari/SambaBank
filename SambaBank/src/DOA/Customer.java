@@ -27,6 +27,10 @@ public class Customer {
     public Customer(String userName, String email, String password){
         this(0, userName, email, password, 0);
     }
+    
+    public Customer(String email, String password){
+        this("", email, password);
+    }
 
     public Customer(){}
 
