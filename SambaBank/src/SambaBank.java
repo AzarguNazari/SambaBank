@@ -1,8 +1,6 @@
 
 import DOA.Customer;
 import DOA.CustomerDAOImpl;
-import DOA.DataHelper;
-import java.sql.SQLException;
 import java.util.Scanner;
 import utility.Checker;
 
