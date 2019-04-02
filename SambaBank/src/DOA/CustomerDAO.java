@@ -4,6 +4,11 @@ package DOA;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 
+ * @author Hazar Gul Nazari
+ */
+
 public interface CustomerDAO {
 
     public List<Customer> getAllCustomers();
